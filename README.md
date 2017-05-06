@@ -67,7 +67,7 @@ fs.readdir(pathName, (err, list) => {
  Create a program that prints a list of files in a given directory, filtered by the extension of the files. The first argument is the  
 directory name and the second argument is the extension filter. Print the list of files (one file per line) to the console. You must use asynchronous I/O.  
 
-myModule.js
+**myModule.js**
 ```javascript
 const fs = require('fs');
 const path = require('path');
@@ -82,7 +82,7 @@ module.exports = function(dirName, extension, callback) {
   });
 };
 ```
-program.js
+**program.js**
 ```javascript
 const filter = require('./myModule')
 
@@ -107,4 +107,103 @@ http.get(url, (response) => {
   response.setEncoding("utf8")
   response.on("data", data => console.log(data))
 }).on('error', error => console.log(error))
+```
+### HTTP COLLECT (Exercise 8 of 13)  
+Write a program that performs an HTTP GET request to a URL provided to you as the first command-line argument. Collect all data from the server (not just the first "data" event) and then write two lines to the console (stdout).
+
+The first line you write should just be an integer representing the number of characters received from the server. The second line should contain the complete String of characters sent by the server.
+
+```shell
+$ npm i --save bl
+```
+
+```javascript
+const http = require('http')
+const buffer = require('bl')
+
+const url = process.argv[2];
+
+http.get(url, response => {
+  response.pipe(buffer((err, data) => {
+    if (err) throw err
+    console.log(data.length);
+    console.log(data.toString());
+  }))
+})
+```
+### JUGGLING ASYNC (Exercise 9 of 13)
+This problem is the same as the previous problem (HTTP COLLECT) in that you need to use http.get(). However, this time you will be provided with three URLs as the first three command-line arguments.
+
+You must collect the complete content provided to you by each of the URLs and print it to the console (stdout). You don't need to print out the length, just the data as a String; one line per URL. The catch is that you must print them out in the same order as the URLs are provided to you as command-line arguments.
+```javascript
+const http = require('http')
+const bl = require('bl')
+
+const info = []
+let count = 0
+
+for (let i = 0; i < 3; i++) {
+  getResponse(i)
+}
+
+function getResponse(i) {
+  http.get(process.argv[2 + i], (response) => getData(response, i))
+}
+
+function getData(res, i) {
+  res.pipe(bl((err, data) => {
+
+    if (err) return console.log(err)
+    info[i] = data.toString()
+    count++;
+
+    count === 3 && logResults();
+  }))
+}
+
+function logResults() {
+  info.map(log => console.log(log))
+}
+```
+### TIME SERVER (Exercise 10 of 13)  
+Write a **TCP time server**!
+
+Your server should listen to TCP connections on the port provided by the first argument to your program. For each connection you must write the current date & 24 hour time in the format:
+
+```
+"YYYY-MM-DD hh:mm"
+```
+
+followed by a **newline** character. Month, day, hour and minute must be *zero-filled* to 2 integers. For example:
+
+```
+"2013-07-06 17:42"
+```
+
+After sending the string, close the connection.
+```javascript
+const net = require('net')
+
+const server = net.createServer((socket) => {
+  console.log('client connected');
+  socket.end(`${getDate()}\n`)
+});
+
+server.listen(process.argv[2], () => console.log("server bound"))
+
+
+function getDate () {
+  const date = new Date();
+
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDay();
+
+  const hour = date.getHours();
+  const minutes = date.getMinutes();
+
+  return `${year}-${addZero(month)}-${addZero(day)} ${addZero(hour)}:${addZero(minutes)}`;
+}
+
+const addZero = i => (i < 10 ? '0' : "") + i;
 ```
